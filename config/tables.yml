@@ -1,0 +1,16 @@
+# Tabelas de negócio capturadas por CDC — FONTE ÚNICA.
+#
+# Usada por:
+#   - register-connectors.sh : monta o table.include.list do Debezium
+#   - stages/landing.py      : monta a lista de tópicos a consumir
+#   - stages/transform.py    : decide quais MERGEs rodar na silver
+#     (a tipagem/PK de cada tabela vive no SQL versionado em
+#      airflow/dags/sql/silver/<name>.sql — uma entrada aqui exige o
+#      arquivo correspondente lá)
+#
+# ATENÇÃO: parseado também por shell (grep '- name:'). Manter o formato
+# `  - name: <tabela>`, uma por linha.
+tables:
+  - name: process_types
+  - name: processes
+  - name: protocols

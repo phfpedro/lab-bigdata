@@ -1,0 +1,18 @@
+# Registro de tenants — FONTE ÚNICA da plataforma.
+#
+# Todas as etapas (extração, landing, silver, publish, isolamento) descobrem
+# quais tenants existem lendo este arquivo. Adicionar um tenant aqui provisiona
+# tudo: banco de origem de exemplo, conector CDC, tasks no Airflow e serving.
+#
+# Convenções derivadas do id (nunca configure em outro lugar):
+#   - banco de origem  : database `<id>` no tenant-db
+#   - tópicos Kafka    : `<id>.public.<tabela>`
+#   - serving          : database `serving_<id>`, role `svc_<id>`
+#
+# ATENÇÃO: este arquivo também é parseado por shell scripts (grep '- id:').
+# Mantenha uma entrada por linha, exatamente no formato `  - id: <nome>`.
+# ids: minúsculas, dígitos e underscore, começando por letra.
+tenants:
+  - id: tenant_acme
+  - id: tenant_beta
+  - id: tenant_zeta

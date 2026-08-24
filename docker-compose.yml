@@ -1,0 +1,264 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# PoC — Plataforma analítica multi-tenant (BPMS), arquitetura por contratos.
+#
+# Cada bloco de serviços pertence a UMA etapa do fluxo. As etapas só se
+# conhecem pelos contratos (ver docs/arquitetura.md); trocar a implementação de uma
+# não exige mudanças nas demais.
+#
+#   E0 origem      → tenant-db (1 database por tenant, simula o prod)
+#   E1 extração    → kafka + connect (Debezium, 1 conector por tenant)
+#   E2 lake        → minio + iceberg-catalog (Iceberg REST)
+#   E3 transform   → trino (MERGE silver / agregações gold)
+#   E4 orquestração→ airflow (+ postgres de metadados)
+#   E5 serving     → serving-db (1 database por tenant, parede física)
+#   E6 consumo     → metabase (dashboard de demonstração, aponta pro serving)
+#
+# Credenciais hardcoded de propósito — laboratório; nunca fazer em produção.
+# ═══════════════════════════════════════════════════════════════════════════
+services:
+
+  # ═══ E0 — Origem: bancos dos tenants (simula produção) ═══════════════════
+  tenant-db:
+    image: postgres:16
+    # wal_level=logical: pré-requisito da replicação lógica usada pelo CDC
+    command: ["postgres", "-c", "wal_level=logical"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: tenants
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./platform/tenant-db/init-tenants.sh:/docker-entrypoint-initdb.d/init-tenants.sh:ro
+      - ./platform/tenant-db/tenant_schema.sql:/tenant-sql/tenant_schema.sql:ro
+      - ./config:/config:ro
+      - tenant-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ═══ E1 — Extração: CDC com Debezium + Kafka (KRaft, nó único) ═══════════
+  kafka:
+    image: apache/kafka:3.9.1
+    environment:
+      CLUSTER_ID: "5L6g3nShT-eMCtK--X86sw"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  connect:
+    image: quay.io/debezium/connect:3.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+      tenant-db:
+        condition: service_healthy
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: cdc-connect
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+    ports:
+      - "8083:8083" # API REST do Connect
+
+  # Registra 1 conector CDC por tenant (lendo config/tenants.yml) e encerra
+  connect-init:
+    image: curlimages/curl:latest
+    depends_on:
+      - connect
+    entrypoint: ["/bin/sh", "/register-connectors.sh"]
+    volumes:
+      - ./platform/connect/register-connectors.sh:/register-connectors.sh:ro
+      - ./config:/config:ro
+
+  # ═══ E2 — Lake: object storage + catálogo Iceberg ════════════════════════
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000" # API S3
+      - "9001:9001" # Console web
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Cria o bucket do lake e encerra
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb --ignore-existing local/lake &&
+      echo 'bucket lake pronto'
+      "
+
+  # Catálogo Iceberg (REST). Em produção AWS o equivalente é o Glue Catalog.
+  iceberg-catalog:
+    image: apache/iceberg-rest-fixture:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: us-east-1
+      CATALOG_WAREHOUSE: s3://lake/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://minio:9000
+      CATALOG_S3_PATH__STYLE__ACCESS: "true"
+    ports:
+      - "8181:8181"
+
+  # ═══ E3 — Transformação: Trino (MERGE/agragações sobre Iceberg) ══════════
+  # Em produção AWS o caminho natural é Athena (mesma família/dialeto);
+  # os arquivos SQL em airflow/dags/sql/ migram quase 1:1.
+  trino:
+    image: trinodb/trino:470
+    depends_on:
+      iceberg-catalog:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./platform/trino/catalog:/etc/trino/catalog:ro
+    healthcheck:
+      test: ["CMD", "trino", "--execute", "SELECT 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 40s
+
+  # ═══ E4 — Orquestração: Airflow ══════════════════════════════════════════
+  postgres-airflow:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-airflow-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  airflow:
+    build: ./platform/airflow
+    command: standalone
+    depends_on:
+      postgres-airflow:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      trino:
+        condition: service_healthy
+      tenant-db:
+        condition: service_healthy
+      serving-db:
+        condition: service_healthy
+      iceberg-catalog:
+        condition: service_started
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres-airflow/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      # Lab: dispensa login na UI (qualquer usuário é admin)
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "True"
+      # ── Config compartilhada das etapas (contratos leem daqui) ──
+      CONFIG_DIR: /opt/airflow/config
+      KAFKA_BOOTSTRAP: kafka:9092
+      ICEBERG_REST_URI: http://iceberg-catalog:8181
+      LAKE_WAREHOUSE: s3://lake/
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_REGION: us-east-1
+      TRINO_HOST: trino
+      TRINO_PORT: "8080"
+      TRINO_USER: pipeline
+      SERVING_HOST: serving-db
+      SERVING_PORT: "5432"
+      SERVING_ADMIN_USER: postgres
+      SERVING_ADMIN_PASSWORD: serving
+      # Janela de releitura da silver (MERGE idempotente torna overlap seguro)
+      SILVER_LOOKBACK_HOURS: "24"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./config:/opt/airflow/config:ro
+
+  # ═══ E5 — Serving: 1 database por tenant (isolamento físico) ═════════════
+  serving-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: serving
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./platform/serving-db/init-serving.sh:/docker-entrypoint-initdb.d/init-serving.sh:ro
+      - ./config:/config:ro
+      - serving-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ═══ E6 — Consumo: Metabase (dashboard de demonstração) ══════════════════
+  # Ferramenta de BI genérica plugada em CIMA da serving — NÃO é o contrato
+  # de produção (esse seria o backend do BPMS lendo a serving_<tenant> do
+  # próprio usuário logado). Serve para provar visualmente que o pipeline
+  # entrega valor: cada conexão configurada aqui usa a credencial exclusiva
+  # de UM tenant (svc_<tenant>), a mesma parede de isolamento da E5 se aplica.
+  metabase:
+    image: metabase/metabase:latest
+    depends_on:
+      serving-db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - metabase-data:/metabase-data
+    environment:
+      MB_DB_FILE: /metabase-data/metabase.db
+
+volumes:
+  tenant-db-data:
+  kafka-data:
+  minio-data:
+  postgres-airflow-data:
+  serving-db-data:
+  metabase-data:
