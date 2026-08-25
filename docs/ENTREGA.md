@@ -40,8 +40,6 @@ Dashboard (visualização final)
 
 Tudo isso é coordenado por uma orquestração única que garante a ordem: uma etapa só começa depois que a anterior termina.
 
-[ESPAÇO PRA IMAGEM: diagrama da arquitetura acima, pode ser um desenho no draw.io ou Excalidraw a partir desse fluxo]
-
 ## Tecnologias usadas
 
 | Camada | Tecnologia | Pra que serve aqui |
@@ -88,11 +86,11 @@ Leva uns 2 minutos pra tudo ficar de pé (o motor de consulta e o orquestrador d
 
 Disparar o pipeline: abre o Airflow, entra na DAG do projeto e clica em Trigger. Acompanha até todas as etapas ficarem verdes. Depois disso ele roda sozinho a cada 5 minutos.
 
-[ESPAÇO PRA IMAGEM: tela do Airflow com todas as etapas da execução em verde]
+![Airflow com a DAG bpms_analytics executada com sucesso, todas as etapas em verde](airflow-dag-execucao.png)
 
 Conectar o dashboard (só precisa fazer isso uma vez): abre o Metabase, cria a conta de admin, e conecta um banco PostgreSQL usando o host, porta, nome do banco, usuário e senha do tenant que quiser visualizar. Depois cria um gráfico pra cada indicador e junta os dois num dashboard.
 
-[ESPAÇO PRA IMAGEM: dashboard final no Metabase]
+![Dashboard final no Metabase com os gráficos de Daily Activity e Process Summary By Type](metabase-dashboard-final.png)
 
 Comandos úteis:
 
@@ -114,9 +112,9 @@ Comandos úteis:
 | Gold | armazenamento de objetos | indicadores já calculados e agregados |
 | Serving | banco relacional, um por tenant | cópia dos indicadores daquele tenant, sem identificar o tenant na coluna, só ele consegue acessar |
 
-[ESPAÇO PRA IMAGEM: console do armazenamento de objetos mostrando os arquivos da camada Bronze]
+![Console do MinIO mostrando os arquivos da camada Bronze (lake/bronze/cdc_events)](minio-bronze-arquivos.png)
 
-[ESPAÇO PRA IMAGEM: resultado de uma consulta na camada Silver, mostrando os dados já tratados]
+![Console do MinIO mostrando as tabelas da camada Silver (lake/silver: process_types, processes, protocols)](minio-silver-arquivos.png)
 
 ## Consultas e indicadores
 
@@ -159,7 +157,15 @@ Resumo do que cada indicador mostra:
 | Percentual em aberto/fechado/cancelado | quantos processos de cada tipo estão em cada situação |
 | Atividade diária | quantos processos abriram, fecharam e quantos eventos foram registrados por dia |
 
-[ESPAÇO PRA IMAGEM: as três consultas acima rodando e mostrando resultado]
+![Console do MinIO mostrando as tabelas da camada Gold (lake/gold: daily_activity, process_summary_by_type)](minio-gold-arquivos.png)
+
+As três consultas acima rodando, direto na camada Serving do tenant `tenant_acme` via pgAdmin (mesma tabela da Gold, só sem a coluna `tenant_id` — que nem é publicada nessa camada — e já filtrada pelo isolamento por database):
+
+![Indicador 1 rodando no pgAdmin: duração média por tipo de processo](pgadmin-indicador-1-duracao-media.png)
+
+![Indicador 2 rodando no pgAdmin: percentual de processos em aberto por tipo](pgadmin-indicador-2-pct-aberto.png)
+
+![Indicador 3 rodando no pgAdmin: volume de atividade por dia](pgadmin-indicador-3-atividade-diaria.png)
 
 ## Orquestração
 
@@ -171,9 +177,9 @@ prepara o lake -> captura os eventos -> trata cada tenant -> calcula os indicado
 
 As etapas de tratar e publicar rodam uma vez pra cada tenant, em paralelo, então se um tenant tiver problema nos dados, não trava o processamento dos outros.
 
-[ESPAÇO PRA IMAGEM: log da etapa de captura de eventos e log do teste de isolamento]
+Conectores CDC (um por tenant) ativos na API do Kafka Connect, todos em `RUNNING`:
 
-[ESPAÇO PRA IMAGEM: conectores de captura de mudanças (CDC) ativos, como prova de que a ingestão está rodando]
+![Conectores de CDC (Debezium) ativos no Kafka Connect, um por tenant, todos em estado RUNNING](kafka-connect-conectores-ativos.png)
 
 ## Limitações conhecidas
 
@@ -182,24 +188,3 @@ As etapas de tratar e publicar rodam uma vez pra cada tenant, em paralelo, entã
 - Não tem rotina de manutenção automática do armazenamento (compactação de arquivos antigos), precisaria disso num uso mais longo.
 - Se mudar algo no banco de origem, tipo adicionar uma coluna nova, é preciso ajustar manualmente a transformação da camada Silver.
 - Cada tenant usa um canal próprio de captura no banco de origem, e isso precisa ser monitorado se a quantidade de tenants crescer muito, pra não sobrecarregar o banco.
-
-## Remover os recursos criados
-
-```bash
-docker compose down -v
-```
-
-Isso derruba os containers e apaga todos os dados gerados, deixando o ambiente limpo.
-
-## Evidências de execução
-
-Prints a juntar aqui, mostrando o pipeline funcionando de ponta a ponta:
-
-- [ ] conectores de captura de eventos ativos
-- [ ] arquivos da camada Bronze no armazenamento
-- [ ] consulta mostrando dados da camada Silver
-- [ ] consulta mostrando os indicadores da camada Gold
-- [ ] execução completa da orquestração, com todas as etapas concluídas
-- [ ] logs da captura de eventos e do teste de isolamento
-- [ ] as três consultas analíticas rodando
-- [ ] dashboard final
