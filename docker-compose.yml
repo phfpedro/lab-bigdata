@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# PoC — Plataforma analítica multi-tenant (BPMS), arquitetura por contratos.
+# Plataforma analítica multi-tenant (BPMS), arquitetura por contratos.
 #
 # Cada bloco de serviços pertence a UMA etapa do fluxo. As etapas só se
 # conhecem pelos contratos (ver docs/arquitetura.md); trocar a implementação de uma
@@ -13,7 +13,7 @@
 #   E5 serving     → serving-db (1 database por tenant, parede física)
 #   E6 consumo     → metabase (dashboard de demonstração, aponta pro serving)
 #
-# Credenciais hardcoded de propósito — laboratório; nunca fazer em produção.
+# Credenciais hardcoded de propósito — ambiente local; nunca fazer em produção.
 # ═══════════════════════════════════════════════════════════════════════════
 services:
 
@@ -193,7 +193,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres-airflow/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      # Lab: dispensa login na UI (qualquer usuário é admin)
+      # Ambiente local: dispensa login na UI (qualquer usuário é admin)
       AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "True"
       # ── Config compartilhada das etapas (contratos leem daqui) ──
       CONFIG_DIR: /opt/airflow/config

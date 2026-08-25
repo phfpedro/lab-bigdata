@@ -5,7 +5,7 @@
 # PUBLIC — sem isso, qualquer role logaria em qualquer database.
 #
 # Convenções (derivadas do registro único config/tenants.yml):
-#   database serving_<tenant> | role svc_<tenant> | senha pw_<tenant>  (LAB!)
+#   database serving_<tenant> | role svc_<tenant> | senha pw_<tenant>  (APENAS LOCAL!)
 #
 # Em produção: senhas em secrets manager e provisionamento automatizado no
 # onboarding do tenant (mesma fonte de verdade do cadastro).

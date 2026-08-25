@@ -37,14 +37,14 @@ de log e `SELECT`s manuais, difícil de mostrar pra alguém não-técnico.
   parede de isolamento da E5 se aplica aqui.
 - **`MB_DB_FILE`**: o Metabase guarda sua própria configuração (conexões
   salvas, usuários, dashboards) num banco próprio — aqui, arquivo local
-  (H2) em vez de Postgres externo, simplificação de laboratório.
+  (H2) em vez de Postgres externo, simplificação do ambiente local.
 
 ## Onde ver isso rodando neste projeto
 
 - Serviço `metabase` em [docker-compose.yml](../../docker-compose.yml).
 - Passo a passo de configuração manual (só na 1ª vez): [README.md](../../README.md).
 
-## Para explorar na prática (lab rodando)
+## Para explorar na prática (com o ambiente rodando)
 
 Siga o passo a passo do [README.md](../../README.md) — criar conta admin,
 conectar em `serving_tenant_acme` com a connection string fornecida, criar
@@ -56,6 +56,6 @@ sobreposição.
 
 ## Caminho pra produção
 
-Não faz parte do mapa PoC → produção em [arquitetura.md](../arquitetura.md)
+Não faz parte do mapa deste projeto → produção em [arquitetura.md](../arquitetura.md)
 justamente por ser só demonstração — o "produção" equivalente é a tela do
 próprio BPMS, não uma tabela de mapeamento de tecnologia.

@@ -72,7 +72,7 @@ databases por tenant** (ver seção de isolamento abaixo).
 - [platform/tenant-db/tenant_schema.sql](../../platform/tenant-db/tenant_schema.sql) — schema de exemplo (BPMS fictício) e dados sintéticos.
 - [airflow/dags/stages/serving.py](../../airflow/dags/stages/serving.py) — quem escreve no serving e quem roda o teste de isolamento.
 
-## Para explorar na prática (lab rodando)
+## Para explorar na prática (com o ambiente rodando)
 
 ```bash
 # conectar na origem de um tenant

@@ -1,4 +1,4 @@
-# Dicionário de termos — PoC multi-tenant
+# Dicionário de termos — plataforma multi-tenant
 
 Um termo, um significado simples. Feito para quem **não** trabalha com dados
 no dia a dia. Sempre que possível, o exemplo se refere a algo que já existe
@@ -20,7 +20,7 @@ Um "servidor" do Kafka — o processo que de fato guarda e entrega as
 mensagens. Não confundir com **tópico** (que é a categoria das mensagens):
 o broker é a "agência dos correios"; o tópico é a "gaveta com etiqueta"
 dentro dela. Um cluster de Kafka pode ter vários brokers trabalhando
-juntos; no nosso laboratório, temos só 1.
+juntos; no nosso ambiente local, temos só 1.
 
 **Bronze (camada bronze)**
 A primeira parada dos dados dentro do lake: uma cópia **crua**, sem
@@ -106,7 +106,7 @@ atual" da silver.
 
 **MinIO**
 Um programa que se comporta exatamente como o armazenamento em nuvem da
-Amazon (S3), mas roda na sua própria máquina. Usamos ele no laboratório
+Amazon (S3), mas roda na sua própria máquina. Usamos ele no ambiente local
 para simular o S3 sem precisar de conta na AWS.
 
 **Offset**
@@ -127,7 +127,7 @@ com o mesmo nome, mas contextos diferentes.*
 
 **Partição (partição do Kafka)**
 Uma "faixa" de uma fila do Kafka que permite processar mensagens em
-paralelo. No nosso laboratório, cada tópico tem só 1 partição (é pequeno);
+paralelo. No nosso ambiente local, cada tópico tem só 1 partição (é pequeno);
 em produção, tópicos grandes teriam várias.
 
 **Publicar / Publish**

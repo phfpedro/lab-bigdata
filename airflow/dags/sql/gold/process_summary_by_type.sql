@@ -2,7 +2,7 @@
 -- Full rebuild a partir da silver: DELETE+INSERT idempotente, todos os
 -- tenants numa passada (o particionamento por tenant_id segrega fisicamente).
 -- Nota: DELETE e INSERT são statements separados (autocommit) — janela breve
--- de tabela vazia é aceitável no lab (em produção, avaliar staging/branch).
+-- de tabela vazia é aceitável neste projeto (em produção, avaliar staging/branch).
 
 DELETE FROM iceberg.gold.process_summary_by_type;
 

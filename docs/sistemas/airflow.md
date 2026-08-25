@@ -69,13 +69,13 @@ multiplicam **uma por tenant** exatamente onde falha isolada importa
 
 - [airflow/dags/bpms_analytics.py](../../airflow/dags/bpms_analytics.py) — a DAG.
 - [airflow/dags/stages/](../../airflow/dags/stages/) — a lógica por trás de cada task.
-- Config do serviço (executor, autenticação simplificada de lab, variáveis
+- Config do serviço (executor, autenticação simplificada para uso local, variáveis
   de ambiente compartilhadas com os `stages/`): serviço `airflow` em
   [docker-compose.yml](../../docker-compose.yml).
 
-## Para explorar na prática (lab rodando)
+## Para explorar na prática (com o ambiente rodando)
 
-1. Abra <http://localhost:8080> (sem login, modo lab).
+1. Abra <http://localhost:8080> (sem login, no ambiente local).
 2. Na DAG `bpms_analytics`, clique em **Graph** para ver visualmente o
    `silver_tenant ×N` e `publish_tenant ×N` se abrindo em paralelo.
 3. Clique numa task individual → **Logs** — cada `print()` dos módulos em

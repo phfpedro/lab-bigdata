@@ -110,7 +110,7 @@ def isolation_check() -> None:
     breaches: list[str] = []
 
     for tenant_id in tenants:
-        role, password = f"svc_{tenant_id}", f"pw_{tenant_id}"  # convenção do lab
+        role, password = f"svc_{tenant_id}", f"pw_{tenant_id}"  # convenção local
 
         # 1) acesso legítimo funciona
         own = _serving_conn(f"serving_{tenant_id}", user=role, password=password)

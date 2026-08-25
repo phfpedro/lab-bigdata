@@ -14,7 +14,7 @@ nada sobre linhas, colunas ou schemas — só guarda bytes.
 ## Por que MinIO neste projeto
 
 Não é uma decisão de arquitetura por si (não aparece na tabela de decisões)
-— é a peça que permite rodar o laboratório **inteiro localmente, sem conta
+— é a peça que permite rodar o projeto **inteiro localmente, sem conta
 AWS**, simulando o S3 que seria usado em produção. Qualquer código escrito
 contra a API do MinIO (como o Iceberg REST catalog e o Trino fazem aqui)
 funciona sem alteração apontando pro S3 real — é só trocar endpoint e
@@ -46,7 +46,7 @@ credenciais.
 - [docker-compose.yml](../../docker-compose.yml) — serviços `minio` e `minio-init`.
 - Console web: <http://localhost:9001> (usuário/senha: `minioadmin`/`minioadmin`).
 
-## Para explorar na prática (lab rodando)
+## Para explorar na prática (com o ambiente rodando)
 
 1. Abra <http://localhost:9001> e entre com `minioadmin` / `minioadmin`.
 2. Navegue até o bucket `lake` → pastas `bronze/`, `silver/`, `gold/` — cada

@@ -17,7 +17,7 @@ Da tabela de decisões em [arquitetura.md](../arquitetura.md) (E3):
 
 | Alternativa | Por que não |
 | --- | --- |
-| Spark | Também resolveria, mas é uma stack mais pesada (JVM + cluster de execução distinto) para o volume deste laboratório; Trino é mais simples de operar self-hosted |
+| Spark | Também resolveria, mas é uma stack mais pesada (JVM + cluster de execução distinto) para o volume deste projeto; Trino é mais simples de operar self-hosted |
 | DuckDB + PyIceberg | Leve e ótimo para exploração, mas não é feito pra ser um serviço always-on multi-usuário como o pipeline precisa |
 
 O motivo decisivo, porém, é estratégico: Trino fala **o mesmo dialeto SQL**
@@ -63,7 +63,7 @@ de execução — sem reescrever a lógica de negócio.
   (silver e gold) e [airflow/dags/stages/serving.py](../../airflow/dags/stages/serving.py) (leitura pro publish).
 - Todo o SQL de negócio, versionado: [airflow/dags/sql/](../../airflow/dags/sql/).
 
-## Para explorar na prática (lab rodando)
+## Para explorar na prática (com o ambiente rodando)
 
 ```bash
 # CLI do Trino, dentro do próprio container

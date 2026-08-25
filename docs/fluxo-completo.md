@@ -60,7 +60,7 @@ Em ordem aproximada de "ficar pronto":
    `tenant_id` **nasce** no fluxo — como nome de tópico Kafka.
 
 7. **`minio`** sobe, e **`minio-init`** roda uma vez para criar o bucket
-   `lake` — o "S3 falso" do laboratório.
+   `lake` — o "S3 falso" do ambiente local.
    📖 aprofundar em [sistemas/minio.md](sistemas/minio.md)
 
 8. **`iceberg-catalog`** sobe apontando pro bucket do MinIO — é o catálogo
@@ -151,7 +151,7 @@ dashboard, ex. duração média por tipo de processo — lendo a silver de
 **todos** os tenants numa passada só (o particionamento por `tenant_id` no
 Iceberg mantém os dados fisicamente separados mesmo processando junto).
 Estratégia é `DELETE` + `INSERT` (full rebuild): simples e sempre correta,
-com uma janela breve de "tabela vazia" que é aceitável no laboratório.
+com uma janela breve de "tabela vazia" que é aceitável neste projeto.
 
 ### 6. `publish_tenant` — uma instância por tenant, em paralelo
 

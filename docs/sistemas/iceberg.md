@@ -61,7 +61,7 @@ tabela como Iceberg resolve que um lake "cru" não resolve.
   [arquitetura.md](../arquitetura.md)).
 - **Compaction / expire snapshots**: manutenção necessária em produção —
   compactar muitos arquivos pequenos em poucos grandes (melhora performance
-  de leitura) e apagar snapshots antigos (libera espaço). Este laboratório
+  de leitura) e apagar snapshots antigos (libera espaço). Este projeto
   **não** faz isso; é uma das pendências conscientes documentadas em
   [arquitetura.md](../arquitetura.md#pendências-conscientes-além-das-etapas-na-gaveta).
 
@@ -75,7 +75,7 @@ tabela como Iceberg resolve que um lake "cru" não resolve.
   [docker-compose.yml](../../docker-compose.yml), e o catálogo do Trino em
   `platform/trino/catalog/`.
 
-## Para explorar na prática (lab rodando)
+## Para explorar na prática (com o ambiente rodando)
 
 ```sql
 -- pelo Trino (ver sistemas/trino.md pra como conectar)

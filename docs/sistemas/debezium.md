@@ -57,7 +57,7 @@ banco (`wal_level=logical`).
   slots são por instância (não por database), o nome precisa ser único —
   daí levar o tenant no nome.
 - **`decimal.handling.mode` / `tombstones.on.delete`**: detalhes de
-  serialização configurados neste projeto por simplicidade de laboratório
+  serialização configurados neste projeto por simplicidade
   (decimais como `double`, sem tombstone de delete) — vale olhar a
   [documentação oficial do conector Postgres](https://debezium.io/documentation/reference/stable/connectors/postgresql.html)
   para entender o que cada opção realmente controla em produção.
@@ -67,7 +67,7 @@ banco (`wal_level=logical`).
 - [platform/connect/register-connectors.sh](../../platform/connect/register-connectors.sh) — registra 1 conector por tenant via API REST do Kafka Connect.
 - Payload do conector, statement por statement, comentado no próprio script.
 
-## Para explorar na prática (lab rodando)
+## Para explorar na prática (com o ambiente rodando)
 
 ```bash
 # listar conectores registrados

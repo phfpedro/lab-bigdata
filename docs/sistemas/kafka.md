@@ -35,7 +35,7 @@ JSON) — não a tecnologia de mensageria em si.
   permitem paralelismo de leitura/escrita — mas também são a unidade de
   **ordem garantida** (mensagens numa mesma partição chegam na ordem em que
   foram escritas; entre partições diferentes, não há garantia). Neste
-  laboratório cada tópico tem 1 partição só (baixo volume); em produção,
+  projeto cada tópico tem 1 partição só (baixo volume); em produção,
   tópicos de alto volume teriam várias.
 - **Broker**: o processo que efetivamente guarda e serve as mensagens.
   Um cluster real tem vários brokers; aqui, só 1 (`kafka`, container único).
@@ -69,7 +69,7 @@ JSON) — não a tecnologia de mensageria em si.
 - Quem consome: [airflow/dags/stages/landing.py](../../airflow/dags/stages/landing.py).
 - Quem produz: o conector Debezium, ver [sistemas/debezium.md](debezium.md).
 
-## Para explorar na prática (lab rodando)
+## Para explorar na prática (com o ambiente rodando)
 
 ```bash
 # entrar no container do Kafka pra usar as ferramentas de linha de comando

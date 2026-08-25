@@ -1,6 +1,6 @@
 # Arquitetura — contratos, decisões e mapeamento pra produção
 
-Ver [../NOTES.md](../NOTES.md). Este
+Ver [../README.md](../README.md). Este
 documento é a referência de arquitetura: como as etapas se encaixam, por que
 cada peça foi escolhida, e o que muda ao ir pra produção.
 
@@ -56,7 +56,7 @@ nas demais.
 | E5 | 1 database por tenant | Schema por tenant + RLS; consulta direta no lake | Tenants concorrentes: parede **estrutural** (conexão não alcança outro database) > parede de configuração |
 
 Multi-tenant em números: o registro em `config/tenants.yml` é a fonte única —
-adicionar um tenant provisiona banco de origem (lab), conector CDC, tasks
+adicionar um tenant provisiona banco de origem (ambiente local), conector CDC, tasks
 mapeadas no Airflow e serving. Nada é listado duas vezes.
 
 > 📖 Fluxo completo em ordem cronológica (o que acontece, na ordem em que
@@ -72,7 +72,7 @@ mapeadas no Airflow e serving. Nada é listado duas vezes.
 > [stack.md](stack.md)
 >
 > 📖 Aprofundamento por sistema (o que é, por que foi escolhido, conceitos
-> pra estudar, como explorar no lab): [sistemas/](sistemas/)
+> pra estudar, como explorar no ambiente local): [sistemas/](sistemas/)
 
 ## Estrutura do repositório
 
@@ -111,9 +111,9 @@ docker-compose.yml            # stack completa, comentada por etapa
   interna) → publish lê apenas a partição do tenant → database exclusivo →
   role exclusiva → `REVOKE CONNECT FROM PUBLIC` → teste automatizado.
 
-## Mapa PoC → produção (AWS ou self-hosted)
+## Mapa ambiente local → produção (AWS ou self-hosted)
 
-| Peça no PoC | AWS gerenciado | Self-hosted |
+| Peça no ambiente local | AWS gerenciado | Self-hosted |
 | --- | --- | --- |
 | MinIO | S3 | MinIO |
 | Iceberg REST fixture | Glue Catalog | REST catalog (Polaris/Lakekeeper) |
@@ -124,7 +124,7 @@ docker-compose.yml            # stack completa, comentada por etapa
 
 ## Pendências conscientes (além das etapas na gaveta)
 
-- Credenciais hardcoded (lab) → secrets manager em produção.
+- Credenciais hardcoded (ambiente local) → secrets manager em produção.
 - Schema evolution da origem: coluna nova exige atualizar o SQL da silver
   (o contrato da bronze absorve sem quebra, pois o payload é JSON).
 - Manutenção Iceberg (compaction/expire de snapshots) → DAG de manutenção.
